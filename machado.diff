@@ -1,0 +1,1687 @@
+diff -u -r ./machado/basics.c machado.orig/algorithms/basics.c
+--- ./machado/basics.c	2012-09-25 11:21:36.000000000 +0200
++++ machado.orig/algorithms/basics.c	2007-11-17 16:37:00.000000000 +0100
+@@ -9,12 +9,6 @@
+ #include<conio.h>
+ #endif
+ 
+-#include "/usr/include/opencv2/core/core.hpp"
+-#include <string>
+-
+-using namespace std;
+-
+-
+ /////////////////////////////////////////
+ /* data structs */                     //
+ typedef struct point {                 //
+@@ -52,7 +46,7 @@
+ element* intersectRLE ( element *, element *, element * );                   //
+ int      ptComp(element *, element *);                                       //
+ void     translade (element *, point &, int );                               //
+-void  flushElement ( element * );                                         //
++   void  flushElement ( element * );                                         //
+                                                                              //
+ image * newImage ();                                                         //
+ image * newImage ( int, int );                                               //
+@@ -173,198 +167,7 @@
+             I->f[i][j][k] = A->f[i][j][k];
+ 
+    return I;
+-}
+-
+-image * convertRegionToImage ( Region toConvert ) {
+-
+-   image * I = new image;
+-   if ( ! I ) {
+-      printf("Memo Extended..\n");
+-      exit(0);
+-   }
+-
+-   if (toConvert.nrRbos() == 0) {
+-	   I->M = 1;
+-	   I->N = 1;
+-	   I->S = 1;
+-	   I->O.x = 1;
+-	   I->O.y = 1;
+-	   I->O.z = 1;
+-	   I->f = createArray(I->M,I->N,I->S);
+-	   I->f[0][0][0] = 1;
+-	   return I;
+-   }
+-
+-   I->M = toConvert.boundingBox().height();  	// number of lines
+-   I->N = toConvert.boundingBox().width();		// number of columns
+-   I->S = 1;									// depth
+-
+-   I->O.x = -toConvert.boundingBox().upperLeft().x_;	// position of the origin within the image-array
+-   I->O.y = -toConvert.boundingBox().upperLeft().y_;	//
+-   I->O.z = 1;											//
+-
+-   I->f = createArray(I->M,I->N,I->S);
+-
+-   for ( int k = 0; k < I->S; k++ )
+-      for ( int i = 0; i < I->M; i++ )
+-         for ( int j = 0; j < I->N; j++ )
+-            I->f[i][j][k] = 0;
+-
+-
+-   for (auto & r : toConvert) {
+-	for (int i = r.start().x_; i < r.start().x_ + r.len(); ++i) {
+-				I->f[r.start().y_ - toConvert.boundingBox().upperLeft().y_][i - toConvert.boundingBox().upperLeft().x_][0] = 1;
+-	}
+-   }
+-
+-//   printf("Filled the array \n");
+-
+-   return I;
+-}
+-
+-/**
+- * Converts a given integer to a string.
+- *
+- * @param number the integer to be converted.
+- * @return number as string.
+- */
+-string convertIntToString(int number)
+-{
+-   stringstream ss; //create a stringstream
+-   ss << number; //add number to the stream
+-   return ss.str(); //return a string with the contents of the stream
+-}
+-
+-Region convertImageToRegion ( image *toConvert ) {
+-
+-   Region ret;
+-   bool runStarted = false;
+-   int eroXstart;
+-
+-   for ( int i = 0; i < toConvert->M; i++ ) {
+-	   for ( int j = 0; j < toConvert->N; j++ ) {
+-		   if (toConvert->f[i][j][0] == 0) {
+-			   if (runStarted) {
+-				   ret.add(Rbo(Point<N16>(eroXstart, i), j - eroXstart));
+-			   }
+-			   runStarted = false;
+-		   } else if (j+1 == toConvert->N) {
+-			   if (runStarted) {
+-				   ret.add(Rbo(Point<N16>(eroXstart, i), j - eroXstart + 1));
+-			   }
+-			   runStarted = false;
+-	   	   } else {
+-			   if (!runStarted) {
+-				   eroXstart = j;
+-			   }
+-			   runStarted = true;
+-		   }
+-	   }
+-   }
+-
+-   ret.translate(Point<N16>(-toConvert->O.x, -toConvert->O.y));
+-
+-   return ret;
+-}
+-
+-
+-/**
+- * Converts toConvert from Region to Mat.
+- */
+-cv::Mat convertRegionToMat ( Region toConvert ) {
+-
+-   cv::Mat ret(toConvert.boundingBox().height(), toConvert.boundingBox().width(), cv::DataType<unsigned char>::type);
+-
+-   for ( int i = 0; i < toConvert.boundingBox().height(); i++ )
+-	   for ( int j = 0; j < toConvert.boundingBox().width(); j++ )
+-		   ret.at<unsigned char>(i,j) = 0;
+-
+-   for ( auto & r : toConvert ) {
+-	   for ( int i = r.start().x_; i < r.start().x_ + r.len(); ++i ) {
+-		   ret.at<unsigned char>(r.start().y_ - toConvert.boundingBox().upperLeft().y_, i - toConvert.boundingBox().upperLeft().x_) = 1;
+-	   }
+-   }
+-
+-   return ret;
+-}
+-
+-
+-/**
+- * Converts toConvert from Mat to Region.
+- * Since Mat apparently doesn't take track of the image's origin, a region converted to
+- * Mat and back to Region afterwards, will be translated by some vector.
+- */
+-Region convertMatToRegion ( cv::Mat toConvert, Point<N16> upperLeft ) {
+-
+-   Region ret;
+-   bool runStarted = false;
+-   int eroXstart;
+-
+-   for ( int i = 0; i < toConvert.rows; i++ ) {
+-	   for ( int j = 0; j < toConvert.cols; j++ ) {
+-		   if (toConvert.at<unsigned char>(i,j) == 0) {
+-			   if (runStarted) {
+-				   ret.add(Rbo(Point<N16>(eroXstart, i), j - eroXstart));
+-			   }
+-			   runStarted = false;
+-		   } else if (j+1 == toConvert.cols) {
+-			   if (runStarted) {
+-				   ret.add(Rbo(Point<N16>(eroXstart, i), j - eroXstart + 1));
+-			   }
+-			   runStarted = false;
+-	   	   } else {
+-			   if (!runStarted) {
+-				   eroXstart = j;
+-			   }
+-			   runStarted = true;
+-	   	   }
+-	   }
+-   }
+-
+-   ret.translate(upperLeft);
+-
+-   return ret;
+-}
+-
+-
+-/**
+- * Returns the transpose of inputRegion
+- */
+-Region transposeRegion(Region inputRegion) {
+-	Region ret;
+-
+-	auto r = inputRegion.end();
+-
+-	while (r != inputRegion.begin()) {
+-		--r;
+-		ret.add(Rbo(PointN16(1 - r->start().x_ - r->len(), - r->start().y_), r->len()));
+-	}
+-
+-	return ret;
+-}
+-
+-
+-/**
+- * Checks whether or not Region LHS equals Region RHS.
+- */
+-bool operator == (Region const & LHS, Region const & RHS) {
+-
+-	if (LHS.nrRbos() != RHS.nrRbos()) {
+-		return false;
+-	}
+-
+-	auto r = RHS.begin();
+-
+-	for(auto & l : LHS) {
+-		if ((l.len() != r->len()) || (l.start() != r->start())) {
+-			return false;
+-		}
+-		++r;
+-	}
+-
+-	return true;
+-}
+-
++}
+ 
+ void complement ( image *A ) {
+    for ( int s = 0; s < A->S; s++ )
+@@ -559,7 +362,6 @@
+    return B;
+ }
+ 
+-
+ image * getLine ( int n ) {
+ 	image *B = newImage(1,n,1,1);
+    return B;
+@@ -569,9 +371,8 @@
+    if ( A ) {
+       deleteArray(A->f, A->M, A->N);
+       delete A;
+-   }
+-}
+-
++   }
++}
+ 
+ int printImageAtFile ( image * I, char * name ) {
+ 
+@@ -638,7 +439,7 @@
+    return true;
+ }
+ 
+-/* d-dimensional : dx ï¿½ a dim a ser fixada. */
++/* d-dimensional : dx é a dim a ser fixada. */
+ int setDensity ( image * A, int viz, bool d1, bool d2, bool d3, int type = DIRECT ) {
+ 
+    int max = -1;
+@@ -782,7 +583,7 @@
+    } else if ( !d1 && !d2 && d3 ) {
+       /* TYPE 0: direct */
+       if ( type == DIRECT ) {
+-         /* inicializando a base da recorrï¿½ncia */
++         /* inicializando a base da recorrência */
+          for ( int s = 0; s < A->S; s++ ) {
+             if ( A->f[0][0][s] <= 0 )
+                A->f[0][0][s] = 0;
+@@ -818,7 +619,7 @@
+          }
+       /* TYPE 1: inverse */
+       } else if ( type == INVERSE ) {
+-               /* inicializando a base da recorrï¿½ncia */
++               /* inicializando a base da recorrência */
+          for ( int s = 0; s < A->S; s++ ) {
+             if ( A->f[A->M-1][A->N-1][s] <= 0 )
+                A->f[A->M-1][A->N-1][s] = 0;
+@@ -857,7 +658,7 @@
+    } else if ( !d1 && d2 && !d3 ) {
+       /* TYPE 0: direct */
+       if ( type == DIRECT ) {
+-         /* inicializando a base da recorrï¿½ncia */
++         /* inicializando a base da recorrência */
+          for ( int j = 0; j < A->N; j++ ) {
+             if ( A->f[0][j][0] <= 0 )
+                A->f[0][j][0] = 0;
+@@ -893,7 +694,7 @@
+          }
+       /* TYPE 1: inverse */
+       } else if ( type == INVERSE ) {
+-               /* inicializando a base da recorrï¿½ncia */
++               /* inicializando a base da recorrência */
+          for ( int j = 0; j < A->N; j++ ) {
+             if ( A->f[A->M-1][j][A->S-1] <= 0 )
+                A->f[A->M-1][j][A->S-1] = 0;
+@@ -932,7 +733,7 @@
+    } else if ( d1 && !d2 && !d3 ) {
+       /* TYPE 0: direct */
+       if ( type == DIRECT ) {
+-         /* inicializando a base da recorrï¿½ncia */
++         /* inicializando a base da recorrência */
+          for ( int i = 0; i < A->M; i++ ) {
+             if ( A->f[i][0][0] <= 0 )
+                A->f[i][0][0] = 0;
+@@ -968,7 +769,7 @@
+          }
+       /* TYPE 1: inverse */
+       } else if ( type == INVERSE ) {
+-         /* inicializando a base da recorrï¿½ncia */
++         /* inicializando a base da recorrência */
+          for ( int i = 0; i < A->M; i++ ) {
+             if ( A->f[i][A->N-1][A->S-1] <= 0 )
+                A->f[i][A->N-1][A->S-1] = 0;
+@@ -1007,7 +808,7 @@
+    } else if ( !d1 && !d2 && !d3 ) {
+       /* TYPE 0: direct */
+       if ( type == DIRECT ) {
+-         /* inicializando a base da recorrï¿½ncia */
++         /* inicializando a base da recorrência */
+          for ( int s = 0; s < A->S; s++ )
+             for ( int i = 0; i < A->M; i++ )
+                if ( A->f[i][0][s] <= 0 )
+@@ -1045,7 +846,7 @@
+          }
+       /* TYPE 1: inverse */
+       } else if ( type == INVERSE ) {
+-         /* inicializando a base da recorrï¿½ncia */
++         /* inicializando a base da recorrência */
+          for ( int s = 0; s < A->S; s++ )
+             for ( int i = 0; i < A->M; i++ )
+                if ( A->f[i][A->N-1][s] <= 0 )
+@@ -1721,7 +1522,7 @@
+ }
+ 
+ element* intersectionElement ( element *a, element *b ) {
+-   /* o seg. argumento nï¿½o se exclui */
++   /* o seg. argumento não se exclui */
+    element *o = NULL, *last = NULL, *lixo;
+    element *p = a, *q = b;
+    for ( ; p && q; ) {
+@@ -1736,7 +1537,7 @@
+          last->prox = NULL;
+       }
+    }
+-   /* jï¿½ o primeiro se decrepta */
++   /* já o primeiro se decrepta */
+    for ( ; p;  ) {
+       lixo = p;
+       p = p->prox;
+@@ -1747,7 +1548,7 @@
+ }
+ 
+ element* unionElement ( element *a, element *b ) {
+-   /* o seg. argumento nï¿½o se exclui */
++   /* o seg. argumento não se exclui */
+    element *o = NULL, *last = NULL;
+    for ( element *p = a, *q = b; p || q; ) {
+       if ( q && p ) {
+@@ -1837,7 +1638,7 @@
+    last->prox = NULL;
+ 
+    for ( ; p; ) {
+-      /* caso haja interseï¿½ao entre last e p */
++      /* caso haja interseçao entre last e p */
+       if ( p->p.z == last->p.z && p->p.x == last->p.x && leftRLE(last) <= p->p.y+1 ) {
+          /* caso p esta contido em last */
+          if ( leftRLE(last) <= leftRLE(p) ) {
+@@ -1874,14 +1675,14 @@
+    for ( element *p = a, *q = b; p && q; ) {
+       /* mesma linha */
+       if ( p->p.x == q->p.x && p->p.z == q->p.z && p->type == q->type ) {
+-         /* caso 0.1: q inter p ï¿½ vazio */
++         /* caso 0.1: q inter p é vazio */
+          if ( q->p.y < leftRLE(p) ) {
+             q = q->prox;
+-         /* caso 0.1: q inter p ï¿½ vazio */
++         /* caso 0.1: q inter p é vazio */
+          } else if ( p->p.y < leftRLE(q) ) {
+             p = p->prox;
+          } else if ( p->p.y <= q->p.y ) {
+-            /* caso 1.1: p estï¿½ contido em q: L(x)*/
++            /* caso 1.1: p está contido em q: L(x)*/
+             if ( leftRLE(p) >= leftRLE(q) ) {
+                if ( !last ) {
+                   out = newElement(p);
+@@ -1902,7 +1703,7 @@
+             }
+             p = p->prox;
+          } else if ( q->p.y <= p->p.y ) {
+-            /* caso 2.0: q estï¿½ contido em p */
++            /* caso 2.0: q está contido em p */
+             if ( leftRLE(q) >= leftRLE(p) ) {
+                if ( !last ) {
+                   out = newElement(q);
+Nur in ./machado/: .cproject.
+Nur in machado.orig/algorithms/datas/finais: bat-1.png.
+Nur in machado.orig/algorithms/datas/finais: beetle-1.png.
+Nur in machado.orig/algorithms/datas/finais: butterfly-1.png.
+Nur in machado.orig/algorithms/datas/finais: cattle-1.png.
+Nur in machado.orig/algorithms/datas/finais: cattle.png.
+Nur in machado.orig/algorithms/datas/finais: crown-1.png.
+Nur in machado.orig/algorithms/datas/finais: deer-1.png.
+Nur in machado.orig/algorithms/datas/finais: dog-1.png.
+Nur in machado.orig/algorithms/datas/finais: elephant-1.png.
+Nur in machado.orig/algorithms/datas/finais: flatfish-1.png.
+Nur in machado.orig/algorithms/datas/finais: horse-1.png.
+Nur in ./machado/datas/finais: mista_part3.png.
+Nur in ./machado/datas/finais: mista_part4.png.
+BinÃ¤rdateien ./machado/datas/finais/mista.png und machado.orig/algorithms/datas/finais/mista.png sind verschieden.
+Nur in ./machado/datas/finais: README.txt.
+Nur in machado.orig/algorithms/datas/finais: synth100sp.png.
+Nur in machado.orig/algorithms/datas/finais: synth10sp.png.
+Nur in machado.orig/algorithms/datas/finais: synth20sp.png.
+Nur in machado.orig/algorithms/datas/finais: synth30sp.png.
+Nur in machado.orig/algorithms/datas/finais: synth40sp.png.
+Nur in machado.orig/algorithms/datas/finais: synth50sp.png.
+Nur in machado.orig/algorithms/datas/finais: synth60sp.png.
+Nur in machado.orig/algorithms/datas/finais: synth70sp.png.
+Nur in machado.orig/algorithms/datas/finais: synth80sp.png.
+Nur in machado.orig/algorithms/datas/finais: synth90sp.png.
+Nur in machado.orig/algorithms/datas/finais: synth.png.
+diff -u -r ./machado/dilations.c machado.orig/algorithms/dilations.c
+--- ./machado/dilations.c	2012-09-25 11:21:36.000000000 +0200
++++ machado.orig/algorithms/dilations.c	2007-11-14 22:39:58.000000000 +0100
+@@ -96,7 +96,7 @@
+    image * temp  = newImage ( A->M, round, A->S, 0x00000000 );
+    image * tempA = newImage ( A->M, round, A->S, 0x00000000 );
+ 
+-   /* compressï¿½o */
++   /* compressão */
+    int2BitVector ( A, tempA );
+ 
+    for ( int s = 0; s < B->S; s++ )
+@@ -119,7 +119,7 @@
+                shift ( tempA, -bMod );
+             }
+ 
+-   /* descompressï¿½o */
++   /* descompressão */
+    bitVector2Int ( temp, out );
+ 
+    flushImage(temp);
+@@ -246,7 +246,7 @@
+ 
+    element *p, *countA = getCountour(A), *allB = NULL;
+ 
+-   /* A princï¿½pio a origem estï¿½ em B */
++   /* A princípio a origem está em B */
+    if ( !B->f[B->O.x][B->O.y][B->O.z] ) {
+       printf ( "\nThe origin don't is in Structuring Element" );
+       return NULL;
+@@ -296,7 +296,7 @@
+               *countB = getCountour(B),
+               *allB = NULL, *ptosCompA = NULL;
+ 
+-   /* A princï¿½pio a origem estï¿½ em B */
++   /* A princípio a origem está em B */
+    if ( !B->f[B->O.x][B->O.y][B->O.z] ) {
+       printf ( "\nThe origin don't is in Structuring Element" );
+       return NULL;
+@@ -311,7 +311,7 @@
+                allB = p;
+             }
+ 
+-   /* Extraï¿½ï¿½o de componentes conexas */
++   /* Extração de componentes conexas */
+    /* O objetivo eh pegar um ponto de cada componente conexa */
+    image * Cimage = newImage(A->M,A->N,A->S,false);
+    for ( element *a = countA; a; a = a->prox )
+@@ -371,7 +371,7 @@
+ 
+    temp = newImage ( A->M+B->M, A->N+B->N, A->S+B->S, false );
+ 
+-   /* De alguma forma, selecionar melhor os parï¿½metros */
++   /* De alguma forma, selecionar melhor os parâmetros */
+    int DIR = DIRECT;
+ 
+    setMinimalShell(A,VIZ,DIM1,DIM2,DIM3,DIR);
+@@ -426,9 +426,21 @@
+    return out;
+ }
+ 
+-element * rleDilation ( element *RLEa, element *RLEb, image *B, image *C = NULL ) {
++image * rleDilation ( image *A, image *B, image *C = NULL ) {
++
++   /* Infimum of P(E) */
++   image * out;
++   if ( !C )
++      out = newImage ( A->M, A->N, A->S, false );
++   else
++      out = C;
++
++   setMinimalShell(A,ORTONORMAL,1,0,1,DIRECT);
++   setMinimalShell(B,ORTONORMAL,1,0,1,DIRECT);
+ 
+    element *RLE = NULL;
++   element *RLEa = setElement(A);
++   element *RLEb = setElement(B);
+    point P;
+ 
+    bool first = true;
+@@ -450,8 +462,15 @@
+ 
+       RLE = unionRLE(a,b);
+    }
++   getElement(out,RLE);
++   flushElement(RLE);
++   flushElement(RLEa);
++   flushElement(RLEb);
+ 
+-   return RLE;
++   unsetShell(A,ORTONORMAL,1,0,1,DIRECT);
++   unsetShell(B,ORTONORMAL,1,0,1,DIRECT);
++
++   return out;
+ }
+ 
+ image * decompDilation ( image *A, image *B, image *C = NULL ) {
+@@ -557,7 +576,7 @@
+    } else
+       return NULL;
+ 
+-   /* A princï¿½pio a origem estï¿½ em B */
++   /* A princípio a origem está em B */
+    if ( !B->f[B->O.x][B->O.y][B->O.z] ) {
+       printf ( "\nThe origin don't is in Structuring Element" );
+       return NULL;
+@@ -613,7 +632,7 @@
+    image * tempA = newImage ( A->M, round, A->S, 0x00000000 );
+    image *d3x3;
+ 
+-   /* compressï¿½o */
++   /* compressão */
+    int2BitVector ( A, tempA );
+ 
+    if ( typeES == QUAD ) {
+@@ -672,7 +691,7 @@
+                tempA->f[x][y][z] = (unsigned int)temp->f[x][y][z];
+    }
+ 
+-   /* descompressï¿½o */
++   /* descompressão */
+    bitVector2Int ( temp, out );
+ 
+    flushImage(d3x3);
+diff -u -r ./machado/erosions.c machado.orig/algorithms/erosions.c
+--- ./machado/erosions.c	2012-09-25 11:21:36.000000000 +0200
++++ machado.orig/algorithms/erosions.c	2008-03-10 17:02:28.000000000 +0100
+@@ -12,7 +12,7 @@
+ image * iDensityErosion ( image *, image *, image *, int, int, int );          //
+ image * densityErosionImp1 ( image *, image *, image *, int, int, int);        //
+ image * densityErosionImp2 ( image *, image *, image *, int, int, int);        //
+-element * rleErosion ( element *, element *, image *, image * );                              //
++image * rleErosion ( image *, image *, image * );                              //
+ image * decompAndCPUErosion ( image *, image *, image * );                     //
+     int evalEro ( image *, element *, point& );                                //
+     int evalEroDirect ( image *, element *, point&, int& );                    //
+@@ -111,7 +111,7 @@
+    image * temp  = newImage ( A->M, round, A->S, 0xFFFFFFFF );
+    image * tempA = newImage ( A->M, round, A->S, 0x00000000 );
+ 
+-   /* compressï¿½o */
++   /* compressão */
+    int2BitVector ( A, tempA );
+ 
+    for ( int s = 0; s < B->S; s++ )
+@@ -134,7 +134,7 @@
+                shift ( tempA, -bMod );
+             }
+ 
+-   /* descompressï¿½o */
++   /* descompressão */
+    bitVector2Int ( temp, out );
+ 
+    flushImage(temp);
+@@ -229,7 +229,7 @@
+    return outEval;
+ }
+ 
+-/* De alguma forma, selecionar melhor os parï¿½metros : DIMi = 1 significa que o eixo i ï¿½ fixo na busca */
++/* De alguma forma, selecionar melhor os parâmetros : DIMi = 1 significa que o eixo i é fixo na busca */
+ image * densityErosion ( image *A, image *B, image *C = NULL, int DIM1 = 1, int DIM2 = 0, int DIM3 = 1) {
+ 
+    /* Infimum of P(E) */
+@@ -545,11 +545,21 @@
+    return out;
+ }
+ 
+-element * rleErosion ( element *RLEa, element *RLEb, image *B, image *C = NULL ) {
++image * rleErosion ( image *A, image *B, image *C = NULL ) {
+ 
+    /* Infimum of P(E) */
+-   element *RLE = NULL;
++   image * out;
++   if ( !C )
++      out = newImage ( A->M, A->N, A->S, false );
++   else
++      out = C;
+ 
++   setMinimalShell(A,ORTONORMAL,1,0,1,DIRECT);
++   setMinimalShell(B,ORTONORMAL,1,0,1,DIRECT);
++
++   element *RLE = NULL;
++   element *RLEa = setElement(A);
++   element *RLEb = setElement(B);
+    point P;
+ 
+    bool first = true;
+@@ -557,9 +567,9 @@
+       element *a = NULL, *b = RLE, *last = NULL;
+       for ( element *p = RLEa; p; p = p->prox ) {
+          if ( q->size <= p->size ) {
+-            P.x = p->p.x + (B->O.x - q->p.x);
+-            P.y = p->p.y + (B->O.y - q->p.y);
+-            P.z = p->p.z + (B->O.z - q->p.z);
++            P.x = p->p.x + (B->O.x-q->p.x);
++            P.y = p->p.y + (B->O.y-q->p.y);
++            P.z = p->p.z + (B->O.z-q->p.z);
+             if ( !last ) {
+                a = newElement(P, p->size - q->size + 1);
+                last = a;
+@@ -579,8 +589,15 @@
+          flushElement(b);
+       }
+    }
++   getElement(out,RLE);
++   flushElement(RLE);
++   flushElement(RLEa);
++   flushElement(RLEb);
++
++   unsetShell(A,ORTONORMAL,1,0,1,DIRECT);
++   unsetShell(B,ORTONORMAL,1,0,1,DIRECT);
+ 
+-   return RLE;
++   return out;
+ }
+ 
+ int evalEro ( image *A, element *root, point &delta ) {
+@@ -623,7 +640,7 @@
+          disp = disp < A->f[X][Y][Z] - root->size + 1 ? disp : A->f[X][Y][Z] - root->size + 1;
+          return evalEroInverse ( A, root->prox, delta, disp );
+       } else {
+-         /* nï¿½o se pode garantir tal propriedade em cascas 2 ou 3d. */
++         /* não se pode garantir tal propriedade em cascas 2 ou 3d. */
+          disp = A->f[X][Y][Z]+1;
+       }
+    } else
+@@ -645,7 +662,7 @@
+    image * tempA = newImage ( A->M, round, A->S, 0x00000000 );
+    image *d3x3;
+ 
+-   /* compressï¿½o */
++   /* compressão */
+    int2BitVector ( A, tempA );
+ 
+    if ( typeES == QUAD ) {
+@@ -704,7 +721,7 @@
+                tempA->f[x][y][z] = (unsigned int)temp->f[x][y][z];
+    }
+ 
+-   /* descompressï¿½o */
++   /* descompressão */
+    bitVector2Int ( temp, out );
+ 
+    flushImage(d3x3);
+Nur in ./machado/: kick-mm.
+diff -u -r ./machado/main.cpp machado.orig/algorithms/main.cpp
+--- ./machado/main.cpp	2012-09-25 11:21:36.000000000 +0200
++++ machado.orig/algorithms/main.cpp	2008-03-10 17:29:42.000000000 +0100
+@@ -2,15 +2,8 @@
+ #include <stdlib.h>
+ #include <time.h>
+ #include <ctype.h>
+-#include <math.h>
+-#include <ipl/pict.hh>
+-#include <ipl/log.hh>
+-#include <ipl/timer.hh>
+-#include <opencv2/core/core.hpp>
+-#include <opencv2/imgproc/imgproc.hpp>
+-
+-using namespace ipl;
+-
++#include <string.h>
++#include <math.h>
+ 
+ enum { DIAMOND, QUAD, LINE, NONE };
+ int typeES;
+@@ -29,18 +22,31 @@
+ 
+ int main(int argc, char** argv) {
+ 
+-   log4cplus::BasicConfigurator::doConfigure();
+-   iplLogger.setLogLevel(log4cplus::WARN_LOG_LEVEL);
+-
+    image *A, *B[500];
+    int n;
+    char input_file[100] = "datas/finais/";
+    char output_file[100] = "results/";
+-
+ 
+-   if ( argc >= 3 ) { // number of arguments must be larger than 3
+-
+-	  // -> sets output-filenames
++   char namesC[100][100] = { "datas/c3.txt",  "datas/c5.txt",   "datas/c7.txt",   "datas/c10.txt",  
++                            "datas/c15.txt",  "datas/c25.txt",
++                            "datas/c50.txt",  "datas/c75.txt",  "datas/c100.txt", "datas/c150.txt",
++                            "datas/c200.txt", "datas/c250.txt", "datas/c300.txt" };
++   char namesD[100][100] = { "datas/d3.txt",   "datas/d5.txt",   "datas/d7.txt",  "datas/d10.txt",  
++                            "datas/d15.txt",  "datas/d25.txt",
++                            "datas/d50.txt",  "datas/d75.txt",  "datas/d100.txt", "datas/d150.txt",
++                            "datas/d200.txt", "datas/d250.txt", "datas/d300.txt" };
++   char namesL[100][100] = { "datas/l3.txt",   "datas/l5.txt",   "datas/l7.txt",  "datas/l10.txt",
++                            "datas/l15.txt",  "datas/l25.txt",
++                            "datas/l50.txt",  "datas/l75.txt",  "datas/l100.txt", "datas/l150.txt",
++                            "datas/l200.txt", "datas/l250.txt", "datas/l300.txt" };
++   char namesS[100][100] = { "datas/antilope.png",  "datas/bee.png",   "datas/butterfly.png",   "datas/cattle.png",  
++                            "datas/dog.png",  "datas/elephant.png", "datas/fish.png", "datas/horse.png"};
++
++   char *ESChoiced[100];
++
++
++   if ( argc >= 4 ) {
++
+       if ( !strcmp("-d", argv[1]) )
+          strcat(output_file,"Dilation_");
+       else if ( !strcmp("-e", argv[1]) )
+@@ -50,9 +56,19 @@
+ 
+       strcat(output_file,argv[2]);
+       strcat(output_file,"_");
+-      // <-
+-
+-      // -> finalizes the output-filename
++
++      if ( !strcmp("square", argv[2]) ) {
++         copyMatChar(ESChoiced, namesC );
++         typeES = QUAD;
++      } else if ( !strcmp("diamond", argv[2]) ) {
++         copyMatChar(ESChoiced, namesD );
++         typeES = DIAMOND;
++      } else if ( !strcmp("line", argv[2]) ) {
++         copyMatChar(ESChoiced, namesL );
++         typeES = LINE;
++      } else
++         goto ERROR_MESSAGE;
++
+       strcat(output_file,argv[3]);
+       strcat(output_file,".dat");
+       for ( int i = strlen(output_file), j = 3; j >= 0; j -- )
+@@ -63,30 +79,44 @@
+                j = 0;
+             else
+                output_file[i] = '-';
+-         }
+-      // <-
++         }
++      strcat(input_file,argv[3]);
+ 
+-      strcat(input_file,argv[3]); // input file
++      /* executa teste incremental completo */
++      bool complete = false;
++
++      /* alpha to int na unha */
++      if ( argv[4] ) {
++         n = 0;
++      for ( int i = 0; i < strlen(argv[4]) ; i ++ )
++         n = n*10 + int (argv[4][i] - 48);
++      } else
++         n = 11; /* all */
++      if ( n > 11 )
++         complete = true;
+ 
+-      A = newImageFromFile ( input_file ); // loads input file
++      A = newImageFromFile ( input_file );
+       if ( !A )
+          return -1;
+-
+-      // gets the desired structuring element in different sizes
+-      int inc = 10, vinic = 3, vfin = 303; // inc = stepsize, vinic = starting size, vfin = maximum size
+-      n = 0;
+-      if ( !strcmp("square", argv[2]) )
+-    	  for ( int i = vinic, j = 0; i <= vfin; i+=inc, j++, n++ )
+-    		  B[j] = getSquare(i);
+-      else if ( !strcmp("diamond", argv[2]) )
+-          for ( int i = vinic, j = 0; i <= vfin; i+=inc, j++, n++ )
+-        	  B[j] = getDiamond(i);
+ 
+-     if ( !strcmp("-e", argv[1]) )
+-        genPaperErosion (A,B,n,output_file);
+-
+-     if ( !strcmp("-d", argv[1]) )
+-        genPaperDilation (A,B,n,output_file);
++      if ( complete ) {
++         int inc = 2, vinic = 3, vfin = 201;
++         n = 0;
++         if ( !strcmp("square", argv[2]) )
++            for ( int i = vinic, j = 0; i <= vfin; i+=inc, j++, n++ )
++               B[j] = getSquare(i);
++         else if ( !strcmp("diamond", argv[2]) )
++            for ( int i = vinic, j = 0; i <= vfin; i+=inc, j++, n++ )
++               B[j] = getDiamond(i);
++         else if ( !strcmp("lines", argv[2]) )
++            for ( int i = vinic, j = 0; i <= vfin; i+=inc, j++, n++ )
++               B[j] = getLine(i);
++      } else
++         for ( int i = 0; i < n; i++ )
++            B[i] = newImageFromFile ( ESChoiced[i] );
++
++     if ( !strcmp("-e", argv[1]) )
++        genPaperErosion (A,B,n,output_file);
+    
+      flushImage(A);
+      for ( int i = 0; i < n; i++ )
+@@ -98,7 +128,7 @@
+       #else
+          char opt[10] = "";
+       #endif
+-      printf ( "\nUsage: %s \'id_operator\' \'type_of_SE\' \'input_image.xxx\' \nWhere \'id_operator\' = {-e,-d},\n      \'type_of_SE\' = { square, diamond } and\n      \'input_image.xxx\' is a txt-%simage in \'datas/finals/\' folder.\n" ,argv[0],opt);
++      printf ( "\nUsage: %s \'id_operator\' \'type_of_SE\' \'input_image.xxx\' [range_of_SE = 11] \nWhere \'id_operator\' = {-e,-d},\n      \'type_of_SE\' = { square, diamond, line } and\n      \'input_image.xxx\' is a txt-%simage in \'datas/finals/\' folder.\n" ,argv[0],opt);
+    }
+ 
+    #if !LINUX
+@@ -107,6 +137,6 @@
+       getch();
+    #endif
+ 
+-   printf ("DONE \n");
++   printf ("\n");
+    return 1;
+ }
+diff -u -r ./machado/Makefile machado.orig/algorithms/Makefile
+--- ./machado/Makefile	2012-09-25 12:50:50.000000000 +0200
++++ machado.orig/algorithms/Makefile	2007-11-14 23:26:10.000000000 +0100
+@@ -8,21 +8,19 @@
+ 
+ CXX=g++
+ 
+-CXXFLAGS= -O2
+-#CXXFLAGS= -g -O0
+-CXXFLAGS+= -std=c++0x
++CXXFLAGS= -O2 
+ #CXXFLAGS+= -Wall
+ CXXFLAGS+= -Wno-deprecated
+ 
+-LIBS = -Lpngwriter -L../build/bin -Ipngwriter -I../iplplus/iplplus/include -I../build/iplplus/include -lz -lpngwriter -lpng12 -liplplus
+-LIBS += -llog4cplus -lopencv_core -lopencv_imgproc
++LIBS = -Lpngwriter -Ipngwriter -lz -lpng12 -lpngwriter 
++
+ LIBS += $(FT_ARG)
+ 
+ all: pngw mmc
+ 
+ mmc: main.cpp
+ 	@ echo ========================= visao ==============================
+-	$(CXX) main.cpp -o mmach $(CXXFLAGS) $(LIBS)
++	$(CXX) -o mmach main.cpp $(CXXFLAGS) $(LIBS)
+   
+ pngw: 
+ 	@ echo ========================= pngwriter=============================
+@@ -33,3 +31,4 @@
+ 
+ clean_all: clean
+ 	@ rm -fv pngwriter/pngwriter.o pngwriter/libpngwriter.a 
++
+BinÃ¤rdateien ./machado/mmach und machado.orig/algorithms/mmach sind verschieden.
+BinÃ¤rdateien ./machado/pngwriter/libpngwriter.a und machado.orig/algorithms/pngwriter/libpngwriter.a sind verschieden.
+BinÃ¤rdateien ./machado/pngwriter/pngwriter.o und machado.orig/algorithms/pngwriter/pngwriter.o sind verschieden.
+Nur in ./machado/: .project.
+Nur in ./machado/results: Dilation_diamond_mista.dat.
+Nur in ./machado/results: Dilation_diamond_mista_part3.dat.
+Nur in ./machado/results: Dilation_diamond_mista_part4.dat.
+Nur in ./machado/results: Dilation_square_mista.dat.
+Nur in ./machado/results: Dilation_square_mista_part3.dat.
+Nur in ./machado/results: Dilation_square_mista_part4.dat.
+Nur in ./machado/results: Erosion_diamond_mista.dat.
+Nur in ./machado/results: Erosion_diamond_mista_part3.dat.
+Nur in ./machado/results: Erosion_diamond_mista_part4.dat.
+Nur in machado.orig/algorithms/results: Erosion_square_cattle-1.dat.
+Nur in ./machado/results: Erosion_square_mista.dat.
+Nur in ./machado/results: Erosion_square_mista_part3.dat.
+Nur in ./machado/results: Erosion_square_mista_part4.dat.
+Nur in ./machado/: .settings.
+diff -u -r ./machado/teste.c machado.orig/algorithms/teste.c
+--- ./machado/teste.c	2013-09-29 14:22:33.000000000 +0200
++++ machado.orig/algorithms/teste.c	2008-03-10 17:20:46.000000000 +0100
+@@ -1,594 +1,338 @@
+-#include "ipl/cimgboard.hh"
+-#include <string>
+-#include <iostream>
+-
+-using namespace std;
+-
+ void genPaperErosion (image *, image *[], int, char *);
+ void genPaperDilation (image *, image *[], int, char *);
+ 
+-/**
+- * @param a Input-Image to erode
+- * @param b structuring element
+- * @param n number of iterations
+- * @filename outputfilename
+- */
+ void genPaperErosion (image *a, image *b[], int n, char *filename = "out.dat" ) {
+ 
+    FILE *eOut;
+    eOut = fopen(filename,"wt");
+    printf ( "\nOpening %s\n",filename);
+-   Region SE, X, k1Region, kERegion;
+-   Timer tm;
+-   UN32 duration;
+-   element *RLEa, *RLEb, *erodedImageRLE;
+-   clock_t start, end;
+-   image *k1, *kE; // kE = result of naive Erosion; k1 is used to store the result of all other algorithms
+-   cv::Mat Xmat, SEmat, erodedImageMat;
+-   int linha;
+ 
+-   if ( !eOut )
++   if ( !eOut )
+       exit(0);
+ 
++   clock_t start, end;
++   image *k1, *kE;
++   int linha;
+ 
+-   fprintf(eOut, "\nO(n)\tRLE\tJmDv\tJmDvM1\tJmDM2\tJmDvM2\topenCV\tEhren2cut\tEhren2\tEhren3"); // column-names within the output-file
++   fprintf(eOut, "\nO(n)\teClM\teClL\teBDD\teCPU\teDec\teRLE\teJmD\teJmI\teJmDM1\teDeCPU\teJmDv\teJmDvM1\teJmDM2\teJmDvM2");
+ 
+    for ( int i = 0; i < n; i++ ) {
+ 
+       printf("\nITERATION %d...",i);
+       fprintf( eOut, "\n%d", b[i]->N );
+ 
+-      linha = 1; // display-output-counter
++      linha = 1;
+       printf("\n");
+ 
+-//      kE = iDensityErosion ( a, b[i], 0, 1 );
+-//      kERegion = convertImageToRegion(kE);
+-//      flushImage(kE);
+-
+-//      /* COMP 1 : ClÃ¡ssico com matrizes */
+-//      printf("Comp. %d...\n", linha);
+-//      tm.tic();  // start time measurement
+-//      k1 = naiveErosion ( a , b[i] );
+-//      duration = tm.toc();
+-//      fprintf(eOut, "\t%u", duration);
+-//      if ( !compare(k1,kE) )
+-//    	  fprintf(eOut,"*");
+-
+-//      /* COMP 2 : ClÃ¡ssico com listas ligadas */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1 = listErosion ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kE) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 3 : Usando BDD  */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1 = bddErosion ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kE) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 4 : Usando Vetor de Bits */
+-      linha++;
+-//      start = clock();
+-//      printf("Comp. %d...\n", linha);
+-//      k1 = CPUErosion ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kE) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//      flushImage(k1);
+-//
+-//      /* COMP 5 : Usando DecomposiÃ§Ã£o por E.E. 3x3 */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1= decompErosion ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kE) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-
++      /* COMP 1 : ClÃ¡ssico com matrizes */
++      printf("Comp. %d...\n", linha);
++      start = clock();
++      kE = naiveErosion ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+ 
+-      /* COMP 6 : Usando RLE*/
++      /* COMP 2 : ClÃ¡ssico com listas ligadas */
+       linha++;
+       printf("Comp. %d...\n", linha);
++      start = clock();
++      k1 = listErosion ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      // -> Conversion from Image to RLE
+-      setMinimalShell(a,ORTONORMAL,1,0,1,DIRECT);    // Builds the skeleton and distance-table of its points
+-      setMinimalShell(b[i],ORTONORMAL,1,0,1,DIRECT); //
+-
+-      RLEa = setElement(a);				 // Extracts the RLE from skeleton + distance-table of its points
+-      RLEb = setElement(b[i]);			 //
+-
+-      k1 = newImage ( a->M, a->N, a->S, false );	 // initializes the output-image
+-      // <-
+-
+-      tm.tic();
+-      erodedImageRLE = rleErosion ( RLEa, RLEb, b[i] ); // input: A and B as run-length-encoded images, output: eroded image as rle-image
+-      duration = tm.toc();
+-
+-      getElement(k1,erodedImageRLE); 			// converts RLE to image
+-      unsetShell(a,ORTONORMAL,1,0,1,DIRECT); 	// rebuilds the original image from skeleton and distance-table of its points
+-      unsetShell(b[i],ORTONORMAL,1,0,1,DIRECT); //
+-
+-      k1Region = convertImageToRegion(k1);
+-      kERegion = k1Region;
+-
+-      fprintf(eOut, "\t%u", duration);
+-      if ( !(k1Region == kERegion) )
+-    	  fprintf(eOut,"*");
+-
+-      flushImage(k1);
+-      flushElement(RLEa);
+-      flushElement(RLEb);
+-      flushElement(erodedImageRLE);
+-
+-
+-//      /* COMP 7 : ErosÃ£o direta */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1= densityErosion ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kE) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 8 : ErosÃ£o inversa */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1= iDensityErosion ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kE) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 9 : ErosÃ£o direta com ordenaÃ§Ã£o decrescentes das cascas do EE (melhoria I)*/
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1= densityErosionImp1 ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kE) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//
+-//      /* COMP 10 : DecomposiÃ§Ã£o + vetor de bits */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1= decompAndCPUErosion ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kE) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-
++      flushImage(k1);
+ 
+-      /* COMP 11 : ErosÃ£o direta com eixo 1 variÃ¡vel */
++      /* COMP 3 : Usando BDD  */
+       linha++;
+       printf("Comp. %d...\n", linha);
+-
+-      tm.tic();
+-      k1 = iDensityErosion ( a, b[i], 0, 1 );
+-      duration = tm.toc();
+-      fprintf(eOut, "\t%u", duration);
+-
+-      k1Region = convertImageToRegion(k1);
+-
+-      if ( !(k1Region == kERegion) )
+-    	  fprintf(eOut,"*");
++      start = clock();
++      k1 = bddErosion ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+       flushImage(k1);
+ 
++      /* COMP 4 : Usando Vetor de Bits */
++      linha++;
++      start = clock();
++      printf("Comp. %d...\n", linha);
++      k1 = CPUErosion ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
++      flushImage(k1);
+ 
+-      /* COMP 12 : ErosÃ£o direta com eixo 1 variÃ¡vel e melhoria I */
++      /* COMP 5 : Usando DecomposiÃ§Ã£o por E.E. 3x3 */
+       linha++;
+       printf("Comp. %d...\n", linha);
+-
+-      tm.tic();
+-      k1 = densityErosionImp1 ( a, b[i], 0, 1 );
+-      duration = tm.toc();
+-      fprintf(eOut, "\t%u", duration);
+-
+-      k1Region = convertImageToRegion(k1);
+-
+-      if ( !(k1Region == kERegion) )
+-    	 fprintf(eOut,"*");
++      start = clock();
++      k1= decompErosion ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+       flushImage(k1);
+ 
+-
+-      /* COMP 13 : ErosÃ£o direta com Melhoria II: densidades negativas */
++      /* COMP 6 : Usando RLE*/
+       linha++;
+       printf("Comp. %d...\n", linha);
+-
+-      tm.tic();
+-      k1 = densityErosionImp2 ( a, b[i] );
+-      duration = tm.toc();
+-      fprintf(eOut, "\t%u", duration);
+-
+-      k1Region = convertImageToRegion(k1);
+-
+-      if ( !(k1Region == kERegion) )
+-    	  fprintf(eOut,"*");
++      start = clock();
++      k1= rleErosion ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+       flushImage(k1);
+ 
+-
+-      /* COMP 14 : ErosÃ£o direta com Melhoria II: densidades negativas e eixo variÃ¡vel 1 */
++      /* COMP 7 : ErosÃ£o direta */
+       linha++;
+       printf("Comp. %d...\n", linha);
+-
+-      tm.tic();
+-      k1= densityErosionImp2 ( a, b[i], 0, 1 );
+-      duration = tm.toc();
+-      fprintf(eOut, "\t%u", duration);
+-
+-      k1Region = convertImageToRegion(k1);
+-
+-      if ( !(k1Region == kERegion) )
+-     	 fprintf(eOut,"*");
++      start = clock();
++      k1= densityErosion ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+       flushImage(k1);
+ 
+-
+-      /* COMP 15 : openCV */
++      /* COMP 8 : ErosÃ£o inversa */
+       linha++;
+       printf("Comp. %d...\n", linha);
++      start = clock();
++      k1= iDensityErosion ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      X = convertImageToRegion(a);											   // Conversion from Image to Mat
+-      Xmat = convertRegionToMat(X);					   						   //
+-      SE = convertImageToRegion(b[i]);										   //
+-      SEmat = convertRegionToMat(SE); 										   //
+-
+-      tm.tic();
+-      cv::erode(Xmat, erodedImageMat, SEmat, cv::Point(-SE.boundingBox().upperLeft().x_,-SE.boundingBox().upperLeft().y_), 1, cv::BORDER_CONSTANT, 0);
+-      duration = tm.toc();
+-      fprintf(eOut, "\t%u", duration);
+-
+-      k1Region = convertMatToRegion(erodedImageMat, X.boundingBox().upperLeft());
+-
+-      if ( !(k1Region == kERegion) )
+-    	 fprintf(eOut,"*");
+-
++      flushImage(k1);
+ 
+-      /* COMP 16 : Ehrensperger - Erosion - Variant 2 cut*/
++      /* COMP 9 : ErosÃ£o direta com ordenaÃ§Ã£o decrescentes das cascas do EE (melhoria I)*/
+       linha++;
+       printf("Comp. %d...\n", linha);
++      start = clock();
++      k1= densityErosionImp1 ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      X = convertImageToRegion(a);	// Conversion from Image to RLE
+-      SE = convertImageToRegion(b[i]); // Conversion from Image to RLE
++      flushImage(k1);
+ 
+-      tm.tic();
+-      k1Region = X.erode2cut(SE);
+-      duration = tm.toc();
+-      fprintf(eOut, "\t%u", duration);
+ 
+-      if ( !(k1Region == kERegion) )
+-    	 fprintf(eOut,"*");
++      /* COMP 10 : DecomposiÃ§Ã£o + vetor de bits */
++      linha++;
++      printf("Comp. %d...\n", linha);
++      start = clock();
++      k1= decompAndCPUErosion ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
++      flushImage(k1);
+ 
+-      /* COMP 17 : Ehrensperger - Erosion - Variant 2*/
++      /* COMP 11 : ErosÃ£o direta com eixo 1 variÃ¡vel */
+       linha++;
+       printf("Comp. %d...\n", linha);
++      start = clock();
++      k1= iDensityErosion ( a, b[i], 0, 1 );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      X = convertImageToRegion(a);	// Conversion from Image to RLE
+-      SE = convertImageToRegion(b[i]); // Conversion from Image to RLE
+-
+-      tm.tic();
+-      k1Region = X.erode2(SE);
+-      duration = tm.toc();
+-      fprintf(eOut, "\t%u", duration);
++      flushImage(k1);
+ 
+-      if ( !(k1Region == kERegion) )
+-    	 fprintf(eOut,"*");
++      /* COMP 12 : ErosÃ£o direta com eixo 1 variÃ¡vel e melhoria I */
++      linha++;
++      printf("Comp. %d...\n", linha);
++      start = clock();
++      k1= densityErosionImp1 ( a, b[i], 0, 1 );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
++      flushImage(k1);
+ 
+-      /* COMP 18 : Ehrensperger - Erosion - Variant 3*/
++      /* COMP 13 : ErosÃ£o direta com Melhoria II: densidades negativas */
+       linha++;
+       printf("Comp. %d...\n", linha);
++      start = clock();
++      k1= densityErosionImp2 ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      X = convertImageToRegion(a);	// Conversion from Image to RLE
+-      SE = convertImageToRegion(b[i]); // Conversion from Image to RLE
+-
+-      tm.tic();
+-      k1Region = X.erode3(SE);
+-      duration = tm.toc();
+-      fprintf(eOut, "\t%u", duration);
++      flushImage(k1);
+ 
+-      if ( !(k1Region == kERegion) )
+-    	 fprintf(eOut,"*");
++      /* COMP 14 : ErosÃ£o direta com Melhoria II: densidades negativas e eixo variÃ¡vel 1 */
++      linha++;
++      printf("Comp. %d...\n", linha);
++      start = clock();
++      k1= densityErosionImp2 ( a, b[i], 0, 1 );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kE) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      fflush(eOut);
++      flushImage(k1);  
++      flushImage(kE);
+    }
+ 
+    fclose(eOut);
+ }
+ 
+-
+ void genPaperDilation (image *a, image *b[], int n, char *filename = "out.dat" ) {
+ 
+    FILE *eOut;
+    eOut = fopen(filename,"wt");
+    printf ( "\nOpening %s\n",filename);
+ 
+-   if ( !eOut )
++   if ( !eOut )
+       exit(0);
+ 
+-   clock_t start, end;
+-   Region X, SE, dilatedImage, k1Region, kDRegion;
+-   image *k1, *kD;
+-   element *dilatedImageRLE, *RLEa, *RLEb;
+-   cv::Mat Xmat, SEmat, dilatedImageMat;
++   clock_t start, end;
++   image *k1, *kD;
+    int linha;
+-   Timer tm;
+-   UN32 duration;
+ 
+-   fprintf(eOut, "\n\nO(n)\tdRLE\tdopenCV\tdEhren\tdEhrencut");
++
++   fprintf(eOut, "\n\nO(n)\tdClM\tdClL\tdBDD\tdCPU\tdDec\tCont\tbCont\tdRLE\tdSh-1\tdSh-E\tdDeCt\tdDeCPU");
+ 
+    for ( int i = 0; i < n; i++ ) {
+ 
+       printf("\nITERATION %d...",i);
+       fprintf( eOut, "\n%d", b[i]->N );
++
+       linha = 1;
+       printf("\n");
+ 
+-//     kD = biContourDilation ( a, b[i] ); 	// every other algorithm compares its result with kD.
+-//     kDRegion = convertImageToRegion(kD);
+-//     flushImage(kD);
+-
+       /* COMP 1 : ClÃ¡ssico com matriz */
+-//      printf("Comp. %d...\n", linha);
+-//      tm.tic();  // start time measurement
+-//      k1 = naiveDilation( a, b[i] );
+-//      duration = tm.toc();
+-//      fprintf(eOut, "\t%u", duration);
+-//      if ( !compare(k1,kD) )
+-//    	  fprintf(eOut,"*");
+-
+-//      /* COMP 2 : ClÃ¡ssico com Listas */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1 = listDilation ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kD) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 3 : BDD */
+-      linha++;
+-//      start = clock();
+-//      printf("Comp. %d...\n", linha);
+-//      k1 = bddDilation ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kD) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 4 : Com vetor de bits */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1 = CPUDilation ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kD) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 5 : Usando decomposiÃ§Ã£o do EE (3x3) */
+-      linha++;
+-//      start = clock();
+-//      printf("Comp. %d...\n", linha);
+-//      k1= decompDilation ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kD) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 6 : Usando contorno da img entrada */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1 = contourDilatio//      /* COMP 1 : ClÃ¡ssico com matriz */
+-//      printf("Comp. %d...\n", linha);
+-//      tm.tic();  // start time measurement
+-//      kD = naiveDilation( a, b[i] );
+-//      duration = tm.toc();
+-//      fprintf(eOut, "\t%u", duration);n ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kD) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 7 : Usando contorno do EE e da img entrada */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1 = biContourDilation ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kD) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-
+-
+-      /* COMP 8 : RLE */
++      printf("Comp. %d...\n", linha);
++      start = clock();
++      kD = naiveDilation( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
++
++      /* COMP 2 : ClÃ¡ssico com Listas */
+       linha++;
+       printf("Comp. %d...\n", linha);
++      start = clock();
++      k1 = listDilation ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      // -> Conversion from Image to RLE
+-      setMinimalShell(a,ORTONORMAL,1,0,1,DIRECT);    // Builds the skeleton and distance-table of its points
+-      setMinimalShell(b[i],ORTONORMAL,1,0,1,DIRECT); //
+-
+-      RLEa = setElement(a);				 // Extracts the RLE from skeleton + distance-table of its points
+-      RLEb = setElement(b[i]);				 //
+-
+-      k1 = newImage ( a->M, a->N, a->S, false );	 // initializes the output-image
+-      // <-
+-
+-      tm.tic();
+-      dilatedImageRLE = rleDilation ( RLEa, RLEb, b[i] ); // input: A and B as run-length-encoded images, output: eroded image as rle-image
+-      duration = tm.toc();
+-
+-      getElement(k1,dilatedImageRLE); 			// converts RLE to image
+-      unsetShell(a,ORTONORMAL,1,0,1,DIRECT); 	// rebuilds the original image from skeleton and distance-table of its points
+-      unsetShell(b[i],ORTONORMAL,1,0,1,DIRECT); //
+-
+-      fprintf(eOut, "\t%u", duration);
+-
+-      k1Region = convertImageToRegion(k1);
+-      kDRegion = k1Region;
++      flushImage(k1);
+ 
+-      if ( !(k1Region == kDRegion) )
+-    	  fprintf(eOut,"*");
++      /* COMP 3 : BDD */
++      linha++;
++      start = clock();
++      printf("Comp. %d...\n", linha);
++      k1 = bddDilation ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+       flushImage(k1);
+-      flushElement(RLEa);
+-      flushElement(RLEb);
+-      flushElement(dilatedImageRLE);
+-
+ 
+-//      /* COMP 9 : DilataÃ§Ã£o por cascas horizontais */
+-      linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1= densityDilation ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kD) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 10 : DilataÃ§Ã£o por cascas 8-conexas */
++      /* COMP 4 : Com vetor de bits */
+       linha++;
+-//      printf("Comp. %d...\n", linha);
+-//      start = clock();
+-//      k1= densityDilation ( a, b[i], 0, 0 );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kD) )
+-//         fprintf(eOut,"\nCOMPARATI						ON ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 11 : DecomposiÃ§Ã£o + contorno */
+-      linha++;
+-//      start = clock();
+-//      printf("Comp. %d...\n", linha);
+-//      k1= decompAndContourDilation ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kD) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
+-//
+-//      /* COMP 12 : DecomposiÃ§Ã£o + vetor de bits */
+-      linha++;
+-//      start = clock();
+-//      printf("Comp. %d...\n", linha);
+-//      k1= decompAndCPUDilation ( a, b[i] );
+-//      end = clock();
+-//      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);
+-//      if ( !compare(k1,kD) )
+-//         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+-//
+-//      flushImage(k1);
++      printf("Comp. %d...\n", linha);
++      start = clock();
++      k1 = CPUDilation ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
++      flushImage(k1);
+ 
+-      /* COMP 13 : openCV */
++      /* COMP 5 : Usando decomposiÃ§Ã£o do EE (3x3) */
+       linha++;
++      start = clock();
+       printf("Comp. %d...\n", linha);
+-      X = convertImageToRegion(a);											   // Conversion from Image to Mat
+-      Xmat = convertRegionToMat(X);					   						   //
+-      SE = transposeRegion(convertImageToRegion(b[i]));						   //
+-      SEmat = convertRegionToMat(SE); 										   //
++      k1= decompDilation ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      tm.tic();
+-      cv::dilate(Xmat, dilatedImageMat, SEmat, cv::Point(-SE.boundingBox().upperLeft().x_, -SE.boundingBox().upperLeft().y_), 1, cv::BORDER_CONSTANT, 0);
+-      duration = tm.toc();
++      flushImage(k1);
+ 
+-      fprintf(eOut, "\t%u", duration);
++      /* COMP 6 : Usando contorno da img entrada */
++      linha++;
++      printf("Comp. %d...\n", linha);
++      start = clock();
++      k1 = contourDilation ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      k1Region = convertMatToRegion(dilatedImageMat, X.boundingBox().upperLeft());
+-      kDRegion.clip(X.boundingBox());
++      flushImage(k1);
+ 
+-      if ( !(k1Region == kDRegion) )
+-    	  fprintf(eOut,"*");
++      /* COMP 7 : Usando contorno do EE e da img entrada */
++      linha++;
++      printf("Comp. %d...\n", linha);
++      start = clock();
++      k1 = biContourDilation ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
++      flushImage(k1);
+ 
+-      /* COMP 14 : Ehrensperger - Dilation (based on Erosion Variant 2) */
++      /* COMP 8 : RLE */
+       linha++;
+       printf("Comp. %d...\n", linha);
++      start = clock();
++      k1= rleDilation ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      X = convertImageToRegion(a);	// Conversion from Image to RLE
+-      SE = convertImageToRegion(b[i]); // Conversion from Image to RLE
+-
+-      tm.tic();
+-      k1Region = X.dilate(SE);
+-      duration = tm.toc();
+-      fprintf(eOut, "\t%u", duration);
++      flushImage(k1);
+ 
+-      k1Region.clip(X.boundingBox());
++      /* COMP 9 : DilataÃ§Ã£o por cascas horizontais */
++      linha++;
++      printf("Comp. %d...\n", linha);
++      start = clock();
++      k1= densityDilation ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      if ( !(k1Region == kDRegion) )
+-    	  fprintf(eOut,"*");
++      flushImage(k1);
+ 
+-      if ( !(k1Region == kDRegion) )
+-    	  fprintf(eOut,"*");
++      /* COMP 10 : DilataÃ§Ã£o por cascas 8-conexas */
++      linha++;
++      printf("Comp. %d...\n", linha);
++      start = clock();
++      k1= densityDilation ( a, b[i], 0, 0 );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
++      flushImage(k1);
+ 
+-      /* COMP 15 : Ehrensperger - Dilation cut (based on Erosion Variant 2) */
++      /* COMP 11 : DecomposiÃ§Ã£o + contorno */
+       linha++;
++      start = clock();
+       printf("Comp. %d...\n", linha);
++      k1= decompAndContourDilation ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      X = convertImageToRegion(a);	// Conversion from Image to RLE
+-      SE = convertImageToRegion(b[i]); // Conversion from Image to RLE
++      flushImage(k1);
+ 
+-      tm.tic();
+-      k1Region = X.dilatecut(SE);
+-      duration = tm.toc();
+-      fprintf(eOut, "\t%u", duration);
++      /* COMP 12 : DecomposiÃ§Ã£o + vetor de bits */
++      linha++;
++      start = clock();
++      printf("Comp. %d...\n", linha);
++      k1= decompAndCPUDilation ( a, b[i] );
++      end = clock();
++      fprintf(eOut, "\t%.2f", ((double)(end - start)) / CLOCKS_PER_SEC);      if ( !compare(k1,kD) )
++         fprintf(eOut,"\nCOMPARATION ERROR: line %d, iteration %d, fileout %s", linha, i, filename );
+ 
+-      k1Region.clip(X.boundingBox());
++      flushImage(k1);
+ 
+-      fflush(eOut);
++      /* NUCLEO */
++      flushImage(kD);
+    }
+    fclose(eOut);
+ }
+Nur in ./machado/: thesisTests.

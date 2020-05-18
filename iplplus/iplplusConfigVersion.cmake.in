@@ -1,0 +1,32 @@
+#****************************************************************//**
+#
+# @file
+# @author fesc
+# @date   Sep 16 2008
+# @par    Copyright: &copy; Datacon 2008-2012
+#              all rights reserved
+#
+# $Id: iplplusConfigVersion.cmake.in 5810 2012-05-18 07:25:46Z fesc $
+#
+# @brief  version file for iplplusConfig
+#
+#*******************************************************************/
+
+set(PACKAGE_VERSION "@IPL_VERSION@")
+
+if("${PACKAGE_VERSION}" VERSION_LESS "${PACKAGE_FIND_VERSION}")
+  set(PACKAGE_VERSION_COMPATIBLE FALSE)
+else()
+  set(PACKAGE_VERSION_COMPATIBLE TRUE)
+  if("${PACKAGE_VERSION}" VERSION_EQUAL "${PACKAGE_FIND_VERSION}")
+    set(PACKAGE_VERSION_EXACT TRUE)
+  endif()
+endif()
+
+# check that the installed version has the same 32/64bit-ness as the
+# one which is currently searching:
+if(NOT "${CMAKE_SIZEOF_VOID_P}" STREQUAL "@CMAKE_SIZEOF_VOID_P@")
+   math(EXPR installedBits "@CMAKE_SIZEOF_VOID_P@ * 8")
+   set(PACKAGE_VERSION "${PACKAGE_VERSION} (${installedBits}bit)")
+   set(PACKAGE_VERSION_UNSUITABLE TRUE)
+endif()

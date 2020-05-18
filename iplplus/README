@@ -1,0 +1,148 @@
+****************************************************************
+*
+* @file
+* @author fesc
+* @date   Apr 14 2008
+* @par    Copyright: &copy; Datacon 2008-2011
+*              all rights reserved
+*
+* $Id: README 5116 2011-09-26 10:36:20Z fesc $
+*
+****************************************************************
+
+1.   Getting Started
+1.1. Examples
+2.   Building
+2.1. Configuration
+2.2. Supported Platforms
+3.   Internationalization
+4.   Installation
+5.   Packaging
+6.   Regression Tests
+7.   Benchmarks
+8.   Bindings
+
+1. Getting started
+=================
+
+IPLplus is a C++ library for image processing and computer vision at Datacon.
+
+The library  depends on a  bunch of  Open Source Libraries  and to use  the full
+functionality, the library requires the following packages/libraries
+
++ For a fancy logging (optional)
+  - log4cplus
+
++ For unit testing (optional)
+  - cppunit
+
++ To read/write images in different formats (optional)
+  - libjpeg
+  - libpng + libz
+  - libtiff
+
++ boost library (required)
+  recommended are  all components  of this mega  library, really  necessary  are
+  boost-serialization and boost-thread
+
++ OpenCV (required)
+  This library is required in version 2.0 or greater. The installed package must
+  provide a cmake configuration, which should be true for the required version.
+
+1.1. Examples
+-------------
+
+In the  sub-directory 'examples' are  some small applications  demonstrating the
+power  of  the library.  All  these  examples are  built  with  the library  and
+installed in '${install_prefix}/share/doc/ipl/examples'.
+
+Find  there also  a application  'iplinfo',  which gives  information about  the
+configuration and loggers in the  library.
+
+After the  built all executables are  located in the bin-directory  in the build
+tree.
+
+
+2. Building
+===========
+
+The library is built with the tool cmake.  So we need this tool in the path.  We
+require cmake in version 2.8.3 or  higher. There are binaries for all platforms,
+they can be found on the project homepage
+
+http://www.cmake.org/HTML/Download.html
+
+cmake is able to generate different project types, depending on the platform.  I
+prefer makefiles with  different targets. A 'make help' in  the build tree shows
+all these targets.
+
+The philosophy  of cmake is  to keep the  build tree always clean  and separated
+from the source tree.  It is good  practice to generate a sibling build tree and
+work in this tree only.
+
+If you  use the  IPLplus library  with other projects  from the  main repository
+'css', generate the whole build tree with the scripts in tools/build
+
+    #~/css/tools/build$
+    #~/css/tools/build$ ./genprojects -p iplplus
+    -- The C compiler identification is GNU
+    -- The CXX compiler identification is GNU
+    -- Check for working C compiler: /usr/bin/gcc
+    -- Check for working C compiler: /usr/bin/gcc -- works
+    -- Detecting C compiler ABI info
+    ...
+
+    #~/css/tools/build$ ./buildprojects
+    <lot of compiler output>
+
+
+2.1. Configuration
+------------------
+
+Normally  the  default  configuration  should  be  fine.   To  explore  all  the
+configuration parameters, use  the program 'cmake-gui'. For this  chdir into the
+build root and
+
+    #~/buildcss/iplplus$ cmake-gui
+
+NOTE: Under cygwin w/o qt you must use the ncurses based front-end 'ccmake'.
+
+The most important options are
+
+- IPL_ENABLE_UNIT_TESTING: Enable the test  suite. Requires cppunit installed on
+  the  build system.  All the  unit tests  are built  and a  makefile  target is
+  created, that can be called via
+
+      make test (*NIX) RUN_TESTS (MSVS)
+
+- IPL_ASSERT_ENABLED: Enables a lot of checks during runtime, only for debugging
+  purpose.
+
+- IPL_DEBUG_ENABLED:  Enables a  special  debug logging  and  sets the  compiler
+  options to have debug symbols in the code.
+
+- IPL_ENABLE_DOXYGEN: Allows  the generation  of the library  documentation with
+  doxygen. Doxygen must be in the path on the build system. The option generates
+  a makefile target
+
+  + api_doc:      generates the API documentation
+
+- IPL_ENABLE_LOG4CPLUS:  Enables  the  logging  framework.  Needs  an  installed
+  log4cplus package. This framework allows a granular logging. Without log4cplus
+  logging messages go  to the console starting from  level WARNING, all messages
+  below  this  level  are  suppressed.  See  also  "Logging  Framework"  in  the
+  documentation.
+
+6. Regression Tests
+===================
+
+If  during configuration  the test  framework  'cppunit' was  detected, you  can
+enable the unit tests with the option BUILD_TESTING. Call the tests with
+
+    #~/BUILDROOT/iplplus$ ctest
+
+You may also select specific test via a regexp as shown below
+
+    #~/BUILDROOT/iplplus$ ctest -R pict
+
+See the ctest manpage for more info how to call ctest.

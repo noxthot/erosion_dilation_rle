@@ -1,0 +1,39 @@
+
+-------------------------------------------------------------------------
+-------------------------------------------------------------------------
+---------	MMACH USANDO TRANSFORMADA DA DENSIDADE          ---------
+-------------------------------------------------------------------------
+-- Anderson Fraiha Machado ----------------------------------------------
+-------------------------------------------------------------------------
+-------------------------------------------------------------------------
+
+Para rodar em Windows, a primeira linha do arquivo 'basics.c' deve ser 
+setada do seguinte modo:
+
+>> /* BASIS MORPHOLOGICAL */
+>> #define LINUX 0
+
+Como executar o programa?
+
+Modo de uso: ./mmach 'id_operator' 'type_of_SE' 'input_image.xxx' [range_of_SE = 11] 
+onde 'id_operator' = {-e,-d},
+      'type_of_SE' = { square, diamond, line } e
+      'input_image.xxx' é uma imagem .txt ou .png no diretório 'datas/finals/'.
+
+Os tamanhos de elementos estruturante 
+variam entre A = {3,5,7,11,15,25,51,75,101,151,201}.
+
+Se quisermos que os testes 
+realizem somente até a dimensão A[5] = 15, 
+o parâmetro range_of_SE = 11.
+
+Por exemplo, ao digitar na linha de comando:
+
+>./mmach -e square cattle-1.png 6
+
+O programa tomará o tempo de execução de todos os algoritmos de erosão 
+tendo como imagem de entrada 'cattle-1.png' e elementos estruturantes
+quadrados de tamanhos 3,5,7,11,15 e 25.
+
+Além disso, no diretório results será criado o arquivo 'Erosion_square_cattle-1.dat'
+contendo uma tabela com as tomadas de tempo.

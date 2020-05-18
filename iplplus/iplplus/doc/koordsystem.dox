@@ -1,0 +1,64 @@
+/*!
+ *
+ * @file
+ * @author fesc
+ * @date   Apr 14 2008
+ * @par    Copyright: &copy; Datacon 2008-2011
+ *              all rights reserved
+ *
+ * $Id: koordsystem.dox 1 2012-09-05 10:26:59Z fesc $
+ *
+ */
+
+/*! @page coordinate_system The Coordinate System
+ *
+ * @c IPLplus  uses the  usual coordinate system  in image processing,  i.e. the
+ * origin (0,0) is the top left corner, @a x is the horizontal axis and @a y the
+ * vertical  one, counting  from  top to  down  positive. This  is  a left  hand
+ * coordinate system, therefore  we count the angle clockwise  to guarantee that
+ * @f[ \tan(\alpha) = \frac{\Delta y}{\Delta x} @f] holds.
+ *
+   @verbatim
+   (0,0) ----------------------------> x
+     |     |
+     |     /
+     | <--/  alpha
+     |
+     |
+    \/
+     y
+   @endverbatim
+ *
+ * Many  of   the  algorithms  work   on  subpixels.  Subpixeling  is   done  by
+ * interpolation and the local origin of a pixel is at its center.
+ *
+ @verbatim
+ (-0.5,-0.5)
+    |----------|
+    |          |
+    |          |
+    |     +    |
+    |   (0,0)  |
+    |          |
+    |----------|
+          (0.5,0.5)
+ @endverbatim
+ *
+ * Consider the following BW-image
+ *
+ @verbatim
+     0 0 0 0 0 0
+     0 0 0 0 0 0
+     0 0 1 1 1 0
+     0 0 1 1 1 0
+     0 0 0 0 0 0
+     0 0 0 0 0 0
+ @endverbatim
+ *
+ * If we count the nonzero pixel and determine the center of gravity, we get
+ * @a (3, 2.5)
+ */
+
+/// Local Variables:
+/// mode: c++
+/// End:

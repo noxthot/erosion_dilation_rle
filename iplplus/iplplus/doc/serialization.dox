@@ -1,0 +1,88 @@
+/*!
+ *
+ * @file
+ * @author fesc
+ * @date   Jun 17 2011
+ * @par    Copyright: &copy; Datacon 2008-2011
+ *              all rights reserved
+ *
+ * $Id: serialization.dox 1 2012-09-05 10:26:59Z fesc $
+ *
+ * @brief  Documentation for the serialization framework
+ *
+ */
+
+/*!
+ * @page serialization Serialization
+ *
+ * Most    of     the    <tt>IPLplus</tt>-objects    have     a    serialization
+ * interface.    Serialization    is   implemented    using    the   @c    boost
+ * serialization-library. To write such an object to a stream or a file, use the
+ * following code fragment
+ * @code
+ *    Circle c(PointF64(100, 100), 123);
+ *    std::ofstream fs("cir.txt");
+ *    boost::archive::text_oarchive ar(fs);
+ *    ar << c;
+ * @endcode
+ *
+ * To load a object, proceed analogously
+ * @code
+ *    Circle c(PointF64(0,0), 0);
+ *    std::ifstream fs("cir.txt");
+ *    boost::archive::text_iarchive ar(fs);
+ *    ar >> c;
+ * @endcode
+ *
+ * @c Apart from a  simple <tt>text_archive</tt> @c boost provides serialization
+ * to a xml-file and  to a binary format. To choose the  desired format, use the
+ * corresponding archive.
+ *
+ * Writing to a xml archive requires an additional macro, that sets the xml-tags
+ * @code
+ *     ar >> BOOST_SERIALIZATION_NVP(c);
+ * @endcode
+ *
+ * @section exception_safety Exception Safety
+ *
+ * If the archive can't be written or read during serialization, boost throws an
+ * exception of type @c boost::archive::archive_exception. If this happens, then
+ * the object  is unchanged (writing to  an archive leaves  the object unchanged
+ * anyway).
+ *
+ * @cond developer_docu
+ *
+ * @section serialization_implementation Implementation of a Serialization Interface
+ *
+ * @note This section  is only a short cookbook, who  to provide a serialization
+ *    for  a  class.   To  handle  more complex  situations  consult  the  boost
+ *    documentation at http://www.boost.org/doc/libs/
+ *
+ * To  provide a  serialization  interface to  a  class, proceed  like in  other
+ * classes, i.e. #ipl::Circle.  If the class inherits from  a base, don't forget
+ * to    serialize   this   baseclass    too.   You    must   use    the   macro
+ * <tt>BOOST_SERIALIZATION_NVP</tt>,  to  guarantee,  that  the  object  can  be
+ * written to a xml-archive. Keep in  mind, that the serialization function is a
+ * template. Therefore  you must  instantiate it, to  use the compiler  to check
+ * your code.
+ *
+ * To achieve the above mentioned exception safety, you must load a object first
+ * to a temporary and  copy it back to the originally object  after the load was
+ * successful. Check, if your class has an exception safe assignment operator.
+ * Example:
+ * @code
+ *     template<typename Archive>
+ *     void load(Archive & ar, UN32 version) {
+ *         Object tmp;
+ *         ar >> tmp.member1_;
+ *         // ... load all the data
+ *         *this = tmp;
+ *     }
+ * @endcode
+ *
+ *@endcond
+ */
+
+/// Local Variables:
+/// mode: c++
+/// End:

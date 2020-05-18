@@ -1,0 +1,28 @@
+# - CMake-Config for the library iplplus for an installed tree
+#
+# The module defines the following variables
+#    iplplus_INCLUDE_DIR - directory with the headers
+#    iplplus_LIBRARIES   - libraries to link against when using iplplus
+#    iplplus_VERSION     - Version as "MM.mm.pp[-rev]"
+# It also defines iplplus_VERSION_(MAJOR|MINOR|PATCH)
+
+#****************************************************************//**
+#
+# @file
+# @author fesc
+# @date   May 17 2012
+# @par Copyright: &copy; Datacon 2008-2012
+#              all rights reserved
+#
+# $Id: iplplusInstallConfig.cmake.in 5819 2012-05-18 09:43:17Z fesc $
+#
+# @brief cmake config template for iplplus
+#
+#*******************************************************************/
+
+### navigate from this file location to the package prefix
+get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../" ABSOLUTE)
+
+include(${CMAKE_CURRENT_LIST_DIR}/iplplus-exports.cmake)
+set(iplplus_LIBRARIES iplplus)
+set(iplplus_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/@CMAKE_INSTALL_INCLUDEDIR@")

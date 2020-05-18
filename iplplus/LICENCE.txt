@@ -1,0 +1,23 @@
+Copyright
+    (C) Datacon 2008-2012
+    all rights reserved
+Datacon Technology GmbH
+Innstrasse 16
+6240 Radfeld
+Austria
+
+The  files  './iplplus/src/core/region_morph.cc', './examples/main.cc', 
+'./tests/test_region_morph.cc' are copyrighted by
+    (C) Gregor Ehrensperger.
+	
+
+--------------------------------------------------------------------------------
+
+  Permission is hereby granted for research and educational use only.
+
+  You may not transfer or use parts of this software in other software projects.
+
+  This software is made available on an as-is basis.  No warranty of correctness
+is either expressed or implied.
+
+--------------------------------------------------------------------------------

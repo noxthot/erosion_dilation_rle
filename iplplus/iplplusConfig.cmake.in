@@ -1,0 +1,31 @@
+# - CMake-Config for the build tree of iplplus
+#
+# This  module imports  the iplplus  library from  a buildtree.  Before  using a
+# find_package  define the  variable iplplus_DIR  pointing  to the  root of  the
+# buildtree. The module defines the following variables
+#    iplplus_INCLUDE_DIR - directory with the headers
+#    iplplus_LIBRARIES   - libraries to link against when using iplplus
+#    iplplus_VERSION     - Version as "MM.mm.pp[-rev]"
+# It also defines iplplus_VERSION_(MAJOR|MINOR|PATCH)
+
+#****************************************************************//**
+#
+# @file
+# @author fesc
+# @date   Sep 16 2008
+# @par    Copyright: &copy; Datacon 2008-2012
+#              all rights reserved
+#
+# $Id: iplplusConfig.cmake.in 5810 2012-05-18 07:25:46Z fesc $
+#
+# @brief  config file for iplplus
+#
+#*******************************************************************/
+
+include(@CMAKE_BINARY_DIR@/iplplus-exports.cmake)
+set(iplplus_INCLUDE_DIR
+  @CMAKE_SOURCE_DIR@/iplplus/include
+  @CMAKE_BINARY_DIR@/iplplus/include)
+set(iplplus_LIBRARIES iplplus)
+
+# version is handled automagically by iplpusConfigVersion.cmake

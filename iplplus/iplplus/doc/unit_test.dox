@@ -1,0 +1,65 @@
+/*!
+ *
+ * @file
+ * @author fesc
+ * @date   Apr 14 2008
+ * @par    Copyright: &copy; Datacon 2008-2012
+ *              all rights reserved
+ *
+ * $Id: unit_test.dox 1 2012-09-05 10:26:59Z fesc $
+ *
+ * @brief  Documentation to Unittesting
+ *
+ */
+
+/*! @page unit_tests Unit Testing
+ *
+ * If the  framework @c cppunit can  be detected during  the configuration step,
+ * the  buildsystem  creates a  target  <tt>test</tt>.  This  target starts  the
+ * regression test and executes all registered unit tests. Changes in the source
+ * code must not be released until all regression tests pass.
+ *
+ * The result of  all tests are written  to a xml file. The  build server parses
+ * this files and generates a report. To output the test results directly to the
+ * console  on the  developers machine,  you must  set the  environment variable
+ * <tt>CSS_LOCAL_TESTING</tt>, so locally use
+ * @code
+ *     fesc@viper10:~/projekte/buildcss/release/iplplus$ CSS_LOCAL_TESTING=ON ctest
+ * @endcode
+ *
+ * The whole  testing suite can  also be run  after installing. When  testing is
+ * enabled a  testing package  is built during  packaging. After  installing the
+ * software and the  test-package, ones can run the  tests against the installed
+ * library.   But  this   requires  that   the  tests   are   configured  during
+ * runtime. There are several environment variables to control this
+ * - @c IPL_TESTIMAGE_PATH path to the directory with the test images, normally
+ *      @c <install-prefix>/var/ipl/images.
+ * - @c IPL_TESTDATA_PATH path to test data, normally
+        @c <install-prefix>/var/ipl/testdata.
+ * - @c IPL_TEST_LOGFILE the configuration file for the logger
+ *
+ * @cond developer_docu
+ *
+ * @section new_test_cases Setting up New Tests
+ *
+ * All  tests are  located  in the  directory  @c tests  and  are prefixed  with
+ * <tt>test_</tt>. The build system relies on this prefix, so don't change it.
+ *
+ * To add  a new test suite,  copy a existing one  and adapt it.  The test class
+ * normally has the  name @c TestClass with  the name of the class  to be tested
+ * instead of @c Class.
+ *
+ * If  a class  in  the library  is  extended by  a new  method  or an  optional
+ * parameter, extend the test cases too. Write the test first, before coding the
+ * feature.
+ *
+ * To compile and enable the test suite,  ones must register the new test in the
+ * file     <tt>tests/CMakeLists.txt</tt>      by     extending     the     list
+ * <em>TESTS_TO_RUN</em>.
+ *
+ * @endcond
+ */
+
+/// Local Variables:
+/// mode: c++
+/// End:

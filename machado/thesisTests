@@ -1,0 +1,15 @@
+#!/bin/bash
+LD_LIBRARY_PATH=../build/bin ./mmach -e square mista.png
+LD_LIBRARY_PATH=../build/bin ./mmach -d square mista.png
+LD_LIBRARY_PATH=../build/bin ./mmach -e diamond mista.png
+LD_LIBRARY_PATH=../build/bin ./mmach -d diamond mista.png
+
+LD_LIBRARY_PATH=../build/bin ./mmach -e square mista_part3.png
+LD_LIBRARY_PATH=../build/bin ./mmach -d square mista_part3.png
+LD_LIBRARY_PATH=../build/bin ./mmach -e diamond mista_part3.png
+LD_LIBRARY_PATH=../build/bin ./mmach -d diamond mista_part3.png
+
+LD_LIBRARY_PATH=../build/bin ./mmach -e square mista_part4.png
+LD_LIBRARY_PATH=../build/bin ./mmach -d square mista_part4.png
+LD_LIBRARY_PATH=../build/bin ./mmach -e diamond mista_part4.png
+LD_LIBRARY_PATH=../build/bin ./mmach -d diamond mista_part4.png$*
